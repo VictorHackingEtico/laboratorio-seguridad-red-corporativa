@@ -21,16 +21,20 @@ Todo el contenido está basado en ejecución real en laboratorio propio, con evi
 
 `Security+` → `SOC / Blue Team` → `PNPT` → `CPTS` → `OSCP`
 
-### 📈 Progreso Actual:
-- **Fase 1 — Fundamentos de Infraestructura**
+### 📈 Progreso Actual
+
+- [x] **Fase 1 — Fundamentos de Infraestructura**
   - [x] Configuración e interconexión del laboratorio perimetral (VMware + pfSense)
-  - [x] Administración básica de sistemas Linux (Auditoría de servicios y logs vía CLI)
+  - [x] Administración básica de sistemas Linux (auditoría de servicios y logs vía CLI)
   - [x] Despliegue de Core SIEM/XDR (Wazuh Manager, Indexer y Dashboard)
-- **Fase 2 — Operaciones de Seguridad (SOC) 🚀 (En Curso)**
-  - [x] Ingesta remota de eventos sin agente vía Syslog (UDP/514)
+- [x] **Fase 2 — Operaciones de Seguridad (SOC)** 🚀 *(En Curso)*
+  - [x] Ingesta remota de eventos sin agente vía Syslog (UDP/514) → [Ver laboratorio detallado](./screenshots/alerta-de-logs-wazuh/README.md)
   - [ ] Análisis de protocolos y detección de escaneos de red (Nmap)
   - [ ] Creación de reglas y decodificadores personalizados en Wazuh
-  - [x] Ingesta remota de eventos sin agente vía Syslog (UDP/514) -> [Ver Laboratorio Detallado e Imágenes](./screenshots/alerta-de-logs-wazuh/README.md)
+- [ ] **Fase 3 — Pentesting Controlado** *(Próximamente)*
+  - [ ] Explotación de servicios vulnerables en red interna (Metasploitable)
+  - [ ] Validación end-to-end: ataque simulado → alerta en SIEM → análisis forense
+
 ---
 
 ## 🧪 Arquitectura del Laboratorio
@@ -38,66 +42,86 @@ Todo el contenido está basado en ejecución real en laboratorio propio, con evi
 El laboratorio utiliza **pfSense** como núcleo para segmentar el tráfico entre zonas de seguridad independientes, aislando los activos críticos del SOC de las superficies de ataque:
 
 | Zona   | Subred            | Interfaz VM  | Función               |
-| :----- | :---------------- | :----------- | :-------------------- |
-| WAN    | `192.168.80.X`    | VMnet8 (NAT) | Salida a Internet     |
-| LAN    | `192.168.10.0/24` | VMnet4       | Usuarios internos     |
-| DMZ    | `192.168.20.0/24` | VMnet3       | Servidores públicos   |
-| ATTACK | `10.20.20.0/24`   | VMnet6       | Máquinas de auditoría |
-| SOC    | `10.30.30.0/24`   | VMnet7       | Monitoreo y SIEM      |
+|--------|-------------------|--------------|----------------------|
+| WAN    | `192.168.80.X`    | VMnet8 (NAT) | Salida a Internet    |
+| LAN    | `192.168.10.0/24` | VMnet4       | Usuarios internos    |
+| DMZ    | `192.168.20.0/24` | VMnet3       | Servidores públicos  |
+| ATTACK | `10.20.20.0/24`   | VMnet6       | Máquinas de auditoría|
+| SOC    | `10.30.30.0/24`   | VMnet7       | Monitoreo y SIEM     |
 
-
-
-
-                INTERNET
-                    │
-              [ pfSense FW ]
-      ┌─────────────┼─────────────┬─────────────┐
-      │             │             │             │
-    [LAN]         [DMZ]       [ATTACK]       [SOC]
-  192.168.10.0  192.168.20.0   10.20.20.0    10.30.30.0
+```
+              INTERNET
+                  │
+            [ pfSense FW ]
+   ┌──────────────┼──────────────┬──────────────┐
+   │              │              │              │
+ [LAN]          [DMZ]        [ATTACK]         [SOC]
+192.168.10.0  192.168.20.0  10.20.20.0     10.30.30.0
+```
 
 ---
 
 ## 🛠️ Tecnologías y Herramientas
 
-| Categoría      | Herramientas                            |
-| :------------- | :-------------------------------------- |
-| Virtualización | VMware Workstation Pro 17 |
-| Sistemas       | Debian, Kali Linux, Metasploitable |
-| Firewall / Net | pfSense, nmap, tcpdump, Wireshark |
-| Defensa / SIEM | Wazuh (Manager, Indexer, Dashboard)     |
+| Categoría       | Herramientas                        |
+|-----------------|-------------------------------------|
+| Virtualización  | VMware Workstation Pro 17           |
+| Sistemas        | Debian, Kali Linux, Metasploitable  |
+| Firewall / Red  | pfSense, nmap, tcpdump, Wireshark   |
+| Defensa / SIEM  | Wazuh (Manager, Indexer, Dashboard) |
 
 ---
 
 ## ⚙️ Desafíos Técnicos Resueltos (Hardening de Infraestructura)
 
-Durante el pipeline de integración entre los componentes de la red, se identificaron y solucionaron los siguientes problemas de comunicación:
+Durante la integración entre los componentes de la red, se identificaron y solucionaron los siguientes problemas:
 
 ### 1. Filtrado Estricto de Hosts en pfSense
-* **Problema:** Los eventos Syslog (`UDP/514`) procedentes de zonas externas (ATTACK/DMZ) eran descartados por las políticas por defecto del firewall.
-* **Solución:** Se implementó una regla de pase explícita en pfSense restringiendo el destino mediante una directiva de host único (`Single Host`), mapeando directamente la IP estática del Wazuh Manager (`10.30.30.10`) y evitando configuraciones de red inseguras.
+
+- **Problema:** Los eventos Syslog (`UDP/514`) procedentes de zonas externas (ATTACK/DMZ) eran descartados por las políticas por defecto del firewall.
+- **Solución:** Se implementó una regla de pase explícita en pfSense restringiendo el destino mediante una directiva de host único (`Single Host`), mapeando directamente la IP estática del Wazuh Manager (`10.30.30.10`).
 
 ### 2. Apertura del Socket Remoto en Wazuh Manager
-* **Problema:** El daemon de Wazuh no procesaba paquetes externos debido a una configuración restrictiva local en el bloque `<remote>`.
-* **Solución:** Se realizó el hardening del archivo `/var/ossec/etc/ossec.conf` modificando el parámetro de escucha `<allowed-ips>` a un rango de subred amplio (`0.0.0.0/0`), habilitando el socket de escucha UDP de manera exitosa.
+
+- **Problema:** El daemon de Wazuh no procesaba paquetes externos debido a una configuración restrictiva en el bloque `<remote>`.
+- **Solución:** Se editó `/var/ossec/etc/ossec.conf` modificando el parámetro `<allowed-ips>` al rango `0.0.0.0/0`, habilitando el socket de escucha UDP correctamente.
 
 ### 3. Debugging Forense mediante Logs Históricos
-* **Problema:** Los eventos que no matcheaban con firmas de seguridad preexistentes eran descartados por el motor sin dejar registro indexado.
-* **Solución:** Se forzó la directiva `<logall>yes</logall>` para activar el almacenamiento histórico crudo en `/var/ossec/logs/archives/archives.log`. Esto permitió validar mediante CLI (`tail -n 20`) que las tramas Syslog inyectadas desde hosts remotos impactaban correctamente en el backend del servidor.
+
+- **Problema:** Los eventos que no coincidían con firmas preexistentes eran descartados por el motor sin dejar registro indexado.
+- **Solución:** Se activó la directiva `<logall>yes</logall>` para almacenar todos los eventos en crudo en `/var/ossec/logs/archives/archives.log`, permitiendo validar via CLI (`tail -f`) que las tramas Syslog de hosts remotos llegaban correctamente al backend.
 
 ---
 
-## 🔬 Caso de Uso: Simulación e Indexación de Ataques SSH
+## 🔬 Caso de Uso: Simulación e Indexación de Ataque SSH
 
-Para comprobar el correcto funcionamiento de la arquitectura (Host Atacante -> Firewall -> SIEM -> Dashboard), se realizó una inyección remota simulando un ataque de fuerza bruta por SSH hacia una cuenta crítica:
+Para verificar el flujo completo (Host Atacante → pfSense → Wazuh SIEM → Dashboard), se ejecutó una inyección remota simulando un ataque de fuerza bruta SSH:
 
 ```bash
-echo "<13> May 23 23:58:00 kali-soc sshd[12345]: Failed password for invalid user root from 192.168.20
+# Inyección de trama Syslog desde host atacante (Kali Linux)
+echo "<13> May 23 23:58:00 kali-soc sshd[12345]: Failed password for invalid user root from 10.20.20.50 port 4444 ssh2" | nc -u 10.30.30.10 514
+```
+
+**Resultado:** El evento fue recibido, procesado y visualizado en el Dashboard de Wazuh en tiempo real, confirmando el correcto funcionamiento de toda la cadena de detección.
+
+📸 [Ver evidencia con capturas de pantalla](./screenshots/alerta-de-logs-wazuh/README.md)
 
 ---
 
+## 📁 Estructura del Repositorio
 
-📬 Contacto
- LinkedIn: https://www.linkedin.com/in/victor-enrique-molina-b534ba3a6/
+```
+laboratorio-seguridad-red-corporativa/
+├── fase-1-fundamentos/         # Configuración inicial de infraestructura
+├── laboratorio/                # Archivos de configuración y scripts del lab
+├── screenshots/
+│   └── alerta-de-logs-wazuh/  # Evidencia técnica: ingesta Syslog en Wazuh
+└── README.md
+```
 
- Email: molina.victor.segurity@gmail.com
+---
+
+## 📬 Contacto
+
+- 🔗 **LinkedIn:** [Victor Enrique Molina](https://www.linkedin.com/in/victor-enrique-molina-b534ba3a6/)
+- 📧 **Email:** molinavictor_03@yahoo.com.ar
