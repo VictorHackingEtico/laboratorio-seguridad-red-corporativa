@@ -45,7 +45,10 @@ El laboratorio utiliza **pfSense** como núcleo para segmentar el tráfico entre
 | ATTACK | `10.20.20.0/24`   | VMnet6       | Máquinas de auditoría |
 | SOC    | `10.30.30.0/24`   | VMnet7       | Monitoreo y SIEM      |
 
-INTERNET
+
+
+
+                INTERNET
                     │
               [ pfSense FW ]
       ┌─────────────┼─────────────┬─────────────┐
@@ -90,6 +93,9 @@ Para comprobar el correcto funcionamiento de la arquitectura (Host Atacante -> F
 
 ```bash
 echo "<13> May 23 23:58:00 kali-soc sshd[12345]: Failed password for invalid user root from 192.168.20
+
+---
+
 
 📬 Contacto
 
