@@ -30,7 +30,7 @@ Todo el contenido está basado en ejecución real en laboratorio propio, con evi
   - [x] Ingesta remota de eventos sin agente vía Syslog (UDP/514)
   - [ ] Análisis de protocolos y detección de escaneos de red (Nmap)
   - [ ] Creación de reglas y decodificadores personalizados en Wazuh
-
+  - [x] Ingesta remota de eventos sin agente vía Syslog (UDP/514) -> [Ver Laboratorio Detallado e Imágenes](./screenshots/alerta-de-logs-wazuh/README.md)
 ---
 
 ## 🧪 Arquitectura del Laboratorio
@@ -54,7 +54,7 @@ El laboratorio utiliza **pfSense** como núcleo para segmentar el tráfico entre
       ┌─────────────┼─────────────┬─────────────┐
       │             │             │             │
     [LAN]         [DMZ]       [ATTACK]       [SOC]
-192.168.10.0  192.168.20.0   10.20.20.0    10.30.30.0
+  192.168.10.0  192.168.20.0   10.20.20.0    10.30.30.0
 
 ---
 
@@ -98,7 +98,6 @@ echo "<13> May 23 23:58:00 kali-soc sshd[12345]: Failed password for invalid use
 
 
 📬 Contacto
+ LinkedIn: https://www.linkedin.com/in/victor-enrique-molina-b534ba3a6/
 
-    LinkedIn: https://www.linkedin.com/in/victor-enrique-molina-b534ba3a6/
-
-    Email: molina.victor.segurity@gmail.com
+ Email: molina.victor.segurity@gmail.com
